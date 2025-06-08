@@ -111,10 +111,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     coordinator = NanoKVMDataUpdateCoordinator(
         hass,
+        entry, # Pass the config entry
         client=client,
         username=username,
         password=password,
-        device_info=device_info, # Pass device_info to coordinator
+        device_info=device_info,
     )
 
     await coordinator.async_config_entry_first_refresh()
@@ -231,16 +232,18 @@ class NanoKVMDataUpdateCoordinator(DataUpdateCoordinator):
     def __init__(
         self,
         hass: HomeAssistant,
+        config_entry: ConfigEntry, # Pass config_entry
         client: NanoKVMClient,
         username: str,
         password: str,
-        device_info: Any, # Add device_info parameter
+        device_info: Any,
     ) -> None:
         """Initialize the coordinator."""
+        self.config_entry = config_entry # Store config_entry
         self.client = client
         self.username = username
         self.password = password
-        self.device_info = device_info # Initialize device_info here
+        self.device_info = device_info
         self.hardware_info = None
         self.gpio_info = None
         self.virtual_device_info = None
@@ -319,14 +322,14 @@ class NanoKVMEntity(CoordinatorEntity):
         """Initialize the entity."""
         super().__init__(coordinator)
         self._attr_name = name
-        self._attr_unique_id = f"{coordinator.device_info.device_key}_{unique_id_suffix}"
+        self._attr_unique_id = f"{self.coordinator.device_info.device_key}_{unique_id_suffix}"
         
     @property
     def device_info(self) -> dict[str, Any]:
         """Return device information about this NanoKVM device."""
         return {
             "identifiers": {(DOMAIN, self.coordinator.device_info.device_key)},
-            "name": f"NanoKVM ({self.coordinator.device_info.mdns})",
+            "name": f"NanoKVM ({self.coordinator.device_info.mdns}.)",
             "manufacturer": "Sipeed",
             "model": f"NanoKVM {self.coordinator.hardware_info.version.value}",
             "sw_version": self.coordinator.device_info.application,

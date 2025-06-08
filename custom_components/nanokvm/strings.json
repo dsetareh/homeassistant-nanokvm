@@ -5,12 +5,18 @@
         "title": "Connect to Sipeed NanoKVM",
         "description": "Set up a Sipeed NanoKVM integration.",
         "data": {
-          "host": "Host (IP address or hostname)",
+          "host": "Host (IP address or hostname)"
+        }
+      },
+      "auth": {
+        "title": "Authenticate to Sipeed NanoKVM",
+        "description": "Authenticate to your Sipeed NanoKVM device.",
+        "data": {
           "username": "Username",
           "password": "Password"
         }
       },
-      "zeroconf_confirm": {
+      "confirm": {
         "title": "Discovered Sipeed NanoKVM",
         "description": "Do you want to set up the NanoKVM device named {name}?"
       }
@@ -19,9 +25,6 @@
       "cannot_connect": "Failed to connect",
       "invalid_auth": "Invalid authentication",
       "unknown": "Unexpected error"
-    },
-    "abort": {
-      "already_configured": "Device is already configured"
     }
   }
 }
