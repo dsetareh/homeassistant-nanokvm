@@ -281,12 +281,21 @@ class NanoKVMDataUpdateCoordinator(DataUpdateCoordinator):
                 self.oled_info = await self.client.get_oled_info()
                 self.wifi_status = await self.client.get_wifi_status()
 
-                if self.hid_mode.mode == HidMode.HID_ONLY:  # Failsafe to the API throwing errors.
-                    self.mounted_image = GetMountedImageRsp(file="")
-                    self.cdrom_status = GetCdRomRsp(cdrom=0)
-                else:
+                try:
                     self.mounted_image = await self.client.get_mounted_image()
+                except NanoKVMError as err:
+                    _LOGGER.error(
+                        "Failed to get mounted image, retrieving default value.%s", err
+                    )
+                    self.mounted_image = GetMountedImageRsp(file="")
+
+                try:
                     self.cdrom_status = await self.client.get_cdrom_status()
+                except NanoKVMError as err:
+                    _LOGGER.error(
+                        "Failed to get CD-ROM status, retrieving default value. %s", err
+                    )
+                    self.cdrom_status = GetCdRomRsp(cdrom=0)
 
                 return {
                     "device_info": self.device_info,
