@@ -27,11 +27,12 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from nanokvm.client import (
+    NanoKVMApiError,
+    NanoKVMAuthenticationFailure,
     NanoKVMClient,
     NanoKVMError,
-    NanoKVMAuthenticationFailure,
 )
-from nanokvm.models import GpioType, HidMode, GetMountedImageRsp, GetCdRomRsp
+from nanokvm.models import GetCdRomRsp, GetMountedImageRsp, GpioType
 
 from .const import (
     ATTR_BUTTON_TYPE,
@@ -283,7 +284,7 @@ class NanoKVMDataUpdateCoordinator(DataUpdateCoordinator):
 
                 try:
                     self.mounted_image = await self.client.get_mounted_image()
-                except NanoKVMError as err:
+                except NanoKVMApiError as err:
                     _LOGGER.error(
                         "Failed to get mounted image, retrieving default value.%s", err
                     )
@@ -291,7 +292,7 @@ class NanoKVMDataUpdateCoordinator(DataUpdateCoordinator):
 
                 try:
                     self.cdrom_status = await self.client.get_cdrom_status()
-                except NanoKVMError as err:
+                except NanoKVMApiError as err:
                     _LOGGER.error(
                         "Failed to get CD-ROM status, retrieving default value. %s", err
                     )
