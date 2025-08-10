@@ -1,0 +1,163 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Conectar ao Sipeed NanoKVM",
+        "description": "Configurar a integração com o Sipeed NanoKVM.",
+        "data": {
+          "host": "Host (endereço IP ou nome do host)"
+        }
+      },
+      "auth": {
+        "title": "Autenticar no Sipeed NanoKVM",
+        "description": "Autentique-se no seu dispositivo Sipeed NanoKVM.",
+        "data": {
+          "username": "Usuário",
+          "password": "Senha"
+        }
+      },
+      "confirm": {
+        "title": "Sipeed NanoKVM detectado",
+        "description": "Deseja configurar o dispositivo NanoKVM chamado {name}?"
+      }
+    },
+    "error": {
+      "cannot_connect": "Falha ao conectar",
+      "invalid_auth": "Autenticação inválida",
+      "unknown": "Erro inesperado"
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "power_led": {
+        "name": "LED de Alimentação"
+      },
+      "hdd_led": {
+        "name": "LED do HDD"
+      },
+      "network_device": {
+        "name": "Dispositivo de Rede Virtual"
+      },
+      "disk_device": {
+        "name": "Dispositivo de Disco Virtual"
+      },
+      "ssh_enabled": {
+        "name": "SSH Ativado"
+      },
+      "mdns_enabled": {
+        "name": "mDNS Ativado"
+      },
+      "oled_present": {
+        "name": "OLED Presente"
+      },
+      "wifi_supported": {
+        "name": "Wi-Fi Suportado"
+      },
+      "wifi_connected": {
+        "name": "Wi-Fi Conectado"
+      },
+      "cdrom_mode": {
+        "name": "Modo CD-ROM"
+      }
+    },
+    "sensor": {
+      "hid_mode": {
+        "name": "Modo HID"
+      },
+      "oled_sleep": {
+        "name": "Tempo de Inatividade do OLED"
+      },
+      "hardware_version": {
+        "name": "Versão de Hardware"
+      },
+      "application_version": {
+        "name": "Versão do Aplicativo"
+      },
+      "mounted_image": {
+        "name": "Imagem Montada"
+      }
+    },
+    "switch": {
+      "ssh": {
+        "name": "SSH"
+      },
+      "mdns": {
+        "name": "mDNS"
+      },
+      "virtual_network": {
+        "name": "Rede Virtual"
+      },
+      "virtual_disk": {
+        "name": "Disco Virtual"
+      }
+    },
+    "button": {
+      "power": {
+        "name": "Botão de Ligar"
+      },
+      "reset": {
+        "name": "Botão de Reiniciar"
+      },
+      "reboot": {
+        "name": "Reiniciar Sistema"
+      },
+      "reset_hdmi": {
+        "name": "Resetar HDMI"
+      },
+      "reset_hid": {
+        "name": "Resetar HID"
+      },
+      "update_application": {
+        "name": "Atualizar Aplicativo"
+      }
+    }
+  },
+  "services": {
+    "push_button": {
+      "name": "Pressionar Botão",
+      "description": "Simula pressionar um botão físico no dispositivo NanoKVM.",
+      "fields": {
+        "button_type": {
+          "name": "Tipo de Botão",
+          "description": "O tipo de botão a ser pressionado (power ou reset)."
+        },
+        "duration": {
+          "name": "Duração",
+          "description": "Tempo para manter o botão pressionado em milissegundos (100-5000)."
+        }
+      }
+    },
+    "paste_text": {
+      "name": "Colar Texto",
+      "description": "Cola texto via simulação de teclado HID.",
+      "fields": {
+        "text": {
+          "name": "Texto",
+          "description": "O texto a ser colado. Apenas caracteres ASCII imprimíveis são suportados."
+        }
+      }
+    },
+    "reboot": {
+      "name": "Reiniciar Sistema",
+      "description": "Reinicia o dispositivo NanoKVM."
+    },
+    "reset_hdmi": {
+      "name": "Resetar HDMI",
+      "description": "Reseta a conexão HDMI (relevante para versão PCIe)."
+    },
+    "reset_hid": {
+      "name": "Resetar HID",
+      "description": "Reseta o subsistema HID."
+    },
+    "wake_on_lan": {
+      "name": "Wake on LAN",
+      "description": "Envia um pacote Wake-on-LAN para o endereço MAC especificado.",
+      "fields": {
+        "mac": {
+          "name": "Endereço MAC",
+          "description": "O endereço MAC para o qual enviar o pacote Wake-on-LAN."
+        }
+      }
+    }
+  }
+}
