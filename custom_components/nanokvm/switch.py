@@ -18,6 +18,7 @@ from nanokvm.models import VirtualDevice, GpioType
 from .const import (
     DOMAIN,
     ICON_DISK,
+    ICON_HDMI,
     ICON_MDNS,
     ICON_NETWORK,
     ICON_SSH,
@@ -83,6 +84,19 @@ SWITCHES: tuple[NanoKVMSwitchEntityDescription, ...] = (
         turn_on_fn=lambda coordinator: coordinator.client.push_button(GpioType.POWER, 200),
         turn_off_fn=lambda coordinator: coordinator.client.push_button(GpioType.POWER, 200),
     ),
+    NanoKVMSwitchEntityDescription(
+        key="hdmi",
+        name="HDMI Output",
+        icon=ICON_HDMI,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda coordinator: coordinator.hdmi_state.enabled if coordinator.hdmi_state else False,
+        turn_on_fn=lambda coordinator: coordinator.client.enable_hdmi(),
+        turn_off_fn=lambda coordinator: coordinator.client.disable_hdmi(),
+        available_fn=lambda coordinator: (
+            coordinator.hdmi_state is not None and
+            coordinator.hardware_info.version.value == "PCIE"
+        ),
+    ),
 )
 
 
@@ -98,7 +112,7 @@ async def async_setup_entry(
     for description in SWITCHES:
         if not description.available_fn(coordinator):
             continue
-            
+
         if description.key == "power":
             entities.append(
                 NanoKVMPowerSwitch(
@@ -114,7 +128,7 @@ async def async_setup_entry(
                     description=description,
                 )
             )
-    
+
     async_add_entities(entities)
 
 
@@ -166,7 +180,7 @@ class NanoKVMPowerSwitch(NanoKVMSwitch):
         await self.entity_description.turn_off_fn(self.coordinator)
 
         # Wait for the device to be off, with a timeout
-        SHUTDOWN_TIMEOUT = 300 
+        SHUTDOWN_TIMEOUT = 300
         SHUTDOWN_POLL_INTERVAL = 5
 
         start_time = self.hass.loop.time()

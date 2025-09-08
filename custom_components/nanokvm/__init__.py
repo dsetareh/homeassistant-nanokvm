@@ -32,12 +32,19 @@ from nanokvm.client import (
     NanoKVMClient,
     NanoKVMError,
 )
-from nanokvm.models import GetCdRomRsp, GetMountedImageRsp, GpioType
+from nanokvm.models import (
+    GetCdRomRsp,
+    GetMountedImageRsp,
+    GpioType,
+    MouseJigglerMode,
+)
 
 from .const import (
     ATTR_BUTTON_TYPE,
     ATTR_DURATION,
+    ATTR_ENABLED,
     ATTR_MAC,
+    ATTR_MODE,
     ATTR_TEXT,
     BUTTON_TYPE_POWER,
     BUTTON_TYPE_RESET,
@@ -48,6 +55,7 @@ from .const import (
     SERVICE_REBOOT,
     SERVICE_RESET_HDMI,
     SERVICE_RESET_HID,
+    SERVICE_SET_MOUSE_JIGGLER,
     SERVICE_WAKE_ON_LAN,
 )
 
@@ -56,6 +64,7 @@ _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
+    Platform.SELECT,
     Platform.SENSOR,
     Platform.SWITCH,
 ]
@@ -82,6 +91,13 @@ WAKE_ON_LAN_SCHEMA = vol.Schema(
     }
 )
 
+SET_MOUSE_JIGGLER_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ENABLED): bool,
+        vol.Optional(ATTR_MODE, default="absolute"): vol.In(["absolute", "relative"]),
+    }
+)
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Sipeed NanoKVM from a config entry."""
@@ -92,7 +108,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Ensure the host has a scheme
     if not host.startswith(("http://", "https://")):
         host = f"http://{host}"
-    
+
     # Ensure the host ends with /api/
     if not host.endswith("/api/"):
         host = f"{host}/api/" if host.endswith("/") else f"{host}/api/"
@@ -131,9 +147,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         """Handle the push button service."""
         button_type = call.data[ATTR_BUTTON_TYPE]
         duration = call.data[ATTR_DURATION]
-        
+
         gpio_type = GpioType.POWER if button_type == BUTTON_TYPE_POWER else GpioType.RESET
-        
+
         for entry_id, coordinator in hass.data[DOMAIN].items():
             client = coordinator.client
             try:
@@ -145,7 +161,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def handle_paste_text(call: ServiceCall) -> None:
         """Handle the paste text service."""
         text = call.data[ATTR_TEXT]
-        
+
         for entry_id, coordinator in hass.data[DOMAIN].items():
             client = coordinator.client
             try:
@@ -187,7 +203,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def handle_wake_on_lan(call: ServiceCall) -> None:
         """Handle the wake on LAN service."""
         mac = call.data[ATTR_MAC]
-        
+
         for entry_id, coordinator in hass.data[DOMAIN].items():
             client = coordinator.client
             try:
@@ -195,6 +211,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 _LOGGER.debug("Wake on LAN packet sent to %s", mac)
             except Exception as err:
                 _LOGGER.error("Failed to send Wake on LAN: %s", err)
+
+    async def handle_set_mouse_jiggler(call: ServiceCall) -> None:
+        """Handle the set mouse jiggler service."""
+        enabled = call.data[ATTR_ENABLED]
+        mode_str = call.data[ATTR_MODE]
+        mode = MouseJigglerMode.ABSOLUTE if mode_str == "absolute" else MouseJigglerMode.RELATIVE
+
+        for entry_id, coordinator in hass.data[DOMAIN].items():
+            client = coordinator.client
+            try:
+                await client.set_mouse_jiggler_state(enabled, mode)
+                _LOGGER.debug("Mouse jiggler set to %s with mode %s", enabled, mode_str)
+            except Exception as err:
+                _LOGGER.error("Failed to set mouse jiggler: %s", err)
 
     hass.services.async_register(
         DOMAIN, SERVICE_PUSH_BUTTON, handle_push_button, schema=PUSH_BUTTON_SCHEMA
@@ -213,6 +243,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     hass.services.async_register(
         DOMAIN, SERVICE_WAKE_ON_LAN, handle_wake_on_lan, schema=WAKE_ON_LAN_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_SET_MOUSE_JIGGLER, handle_set_mouse_jiggler, schema=SET_MOUSE_JIGGLER_SCHEMA
     )
 
     return True
@@ -255,6 +288,8 @@ class NanoKVMDataUpdateCoordinator(DataUpdateCoordinator):
         self.wifi_status = None
         self.mounted_image = None
         self.cdrom_status = None
+        self.mouse_jiggler_state = None
+        self.hdmi_state = None
 
         super().__init__(
             hass,
@@ -281,21 +316,30 @@ class NanoKVMDataUpdateCoordinator(DataUpdateCoordinator):
                 self.hid_mode = await self.client.get_hid_mode()
                 self.oled_info = await self.client.get_oled_info()
                 self.wifi_status = await self.client.get_wifi_status()
+                self.hdmi_state = await self.client.get_hdmi_state()
+                self.mouse_jiggler_state = await self.client.get_mouse_jiggler_state()
 
-                try:
-                    self.mounted_image = await self.client.get_mounted_image()
-                except NanoKVMApiError as err:
-                    _LOGGER.error(
-                        "Failed to get mounted image, retrieving default value.%s", err
-                    )
+                # Only fetch mounted image and CD-ROM status if HID mode is NORMAL
+                # When HID mode is HID_ONLY, these features are automatically disabled
+                if self.hid_mode.mode == "normal":
+                    try:
+                        self.mounted_image = await self.client.get_mounted_image()
+                    except NanoKVMApiError as err:
+                        _LOGGER.debug(
+                            "Failed to get mounted image, retrieving default value: %s", err
+                        )
+                        self.mounted_image = GetMountedImageRsp(file="")
+
+                    try:
+                        self.cdrom_status = await self.client.get_cdrom_status()
+                    except NanoKVMApiError as err:
+                        _LOGGER.debug(
+                            "Failed to get CD-ROM status, retrieving default value: %s", err
+                        )
+                        self.cdrom_status = GetCdRomRsp(cdrom=0)
+                else:
+                    # Set default values when HID mode is enabled
                     self.mounted_image = GetMountedImageRsp(file="")
-
-                try:
-                    self.cdrom_status = await self.client.get_cdrom_status()
-                except NanoKVMApiError as err:
-                    _LOGGER.error(
-                        "Failed to get CD-ROM status, retrieving default value. %s", err
-                    )
                     self.cdrom_status = GetCdRomRsp(cdrom=0)
 
                 return {
@@ -310,6 +354,8 @@ class NanoKVMDataUpdateCoordinator(DataUpdateCoordinator):
                     "wifi_status": self.wifi_status,
                     "mounted_image": self.mounted_image,
                     "cdrom_status": self.cdrom_status,
+                    "mouse_jiggler_state": self.mouse_jiggler_state,
+                    "hdmi_state": self.hdmi_state,
                 }
         except (NanoKVMError, aiohttp.ClientError, asyncio.TimeoutError) as err:
             # If we get an authentication error, try to re-authenticate
@@ -320,7 +366,7 @@ class NanoKVMDataUpdateCoordinator(DataUpdateCoordinator):
                     return await self._async_update_data()
                 except Exception as auth_err:
                     raise UpdateFailed(f"Authentication failed: {auth_err}") from auth_err
-            
+
             raise UpdateFailed(f"Error communicating with NanoKVM: {err}") from err
 
 
@@ -338,7 +384,7 @@ class NanoKVMEntity(CoordinatorEntity):
         self._attr_name = name
         self._attr_unique_id = f"{coordinator.device_info.device_key}_{unique_id_suffix}"
         _LOGGER.debug("Setting unique_id for %s: %s", self._attr_name, self._attr_unique_id)
-        
+
     @property
     def device_info(self) -> dict[str, Any]:
         """Return device information about this NanoKVM device."""
