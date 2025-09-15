@@ -19,12 +19,15 @@ SERVICE_REBOOT = "reboot"
 SERVICE_RESET_HDMI = "reset_hdmi"
 SERVICE_RESET_HID = "reset_hid"
 SERVICE_WAKE_ON_LAN = "wake_on_lan"
+SERVICE_SET_MOUSE_JIGGLER = "set_mouse_jiggler"
 
 # Service attributes
 ATTR_BUTTON_TYPE = "button_type"
 ATTR_DURATION = "duration"
 ATTR_TEXT = "text"
 ATTR_MAC = "mac"
+ATTR_ENABLED = "enabled"
+ATTR_MODE = "mode"
 
 # Button types
 BUTTON_TYPE_POWER = "power"
@@ -47,3 +50,5 @@ ICON_OLED = "mdi:monitor-small"
 ICON_WIFI = "mdi:wifi"
 ICON_IMAGE = "mdi:disc"
 ICON_CDROM = "mdi:disc"
+ICON_MOUSE_JIGGLER = "mdi:mouse"
+ICON_HDMI = "mdi:video-input-hdmi"

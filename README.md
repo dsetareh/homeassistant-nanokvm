@@ -14,6 +14,8 @@ project was created by the use of a LLM (Google Gemini) using Cline, as an exper
 - Paste text via HID keyboard simulation
 - Control OLED display settings
 - Monitor and control mounted images
+- **NEW**: Mouse jiggler control with multiple modes
+- **NEW**: HDMI output control for PCI-E versions
 
 ## Installation
 
@@ -58,6 +60,7 @@ project was created by the use of a LLM (Google Gemini) using Cline, as an exper
 - **WiFi Supported**: Shows if WiFi is supported
 - **WiFi Connected**: Shows if WiFi is connected
 - **CD-ROM Mode**: Shows if the mounted image is in CD-ROM mode
+- **Mouse Jiggler**: Shows if the mouse jiggler is currently active
 
 ### Sensors
 
@@ -74,13 +77,21 @@ project was created by the use of a LLM (Google Gemini) using Cline, as an exper
 - **mDNS**: Toggle mDNS on/off
 - **Virtual Network**: Toggle virtual network device on/off
 - **Virtual Disk**: Toggle virtual disk device on/off
+- **HDMI Output**: Toggle HDMI output on/off (PCI-E versions only)
+
+### Select Entities
+
+- **Mouse Jiggler Mode**: Control mouse jiggler with three modes:
+  - **Disable**: Turn off mouse jiggler
+  - **Relative Mode**: Move mouse cursor in relative movements
+  - **Absolute Mode**: Move mouse cursor to absolute positions
 
 ### Buttons
 
 - **Power Button**: Push the power button
 - **Reset Button**: Push the reset button
 - **Reboot System**: Reboot the NanoKVM device
-- **Reset HDMI**: Reset the HDMI connection (PCIe version only)
+- **Reset HDMI**: Reset the HDMI connection (PCI-E versions only)
 - **Reset HID**: Reset the HID subsystem
 - **Update Application**: Update the NanoKVM application
 
@@ -92,6 +103,7 @@ project was created by the use of a LLM (Google Gemini) using Cline, as an exper
 - **nanokvm.reset_hdmi**: Reset the HDMI connection
 - **nanokvm.reset_hid**: Reset the HID subsystem
 - **nanokvm.wake_on_lan**: Send a Wake-on-LAN packet
+- **nanokvm.set_mouse_jiggler**: Set mouse jiggler mode (disable, relative, absolute)
 
 ## Example Automations
 
@@ -124,11 +136,68 @@ automation:
           text: "username\npassword\n"
 ```
 
+### Enable Mouse Jiggler During Work Hours
+
+```yaml
+automation:
+  - alias: "Enable Mouse Jiggler During Work Hours"
+    trigger:
+      - platform: time
+        at: "09:00:00"
+    action:
+      - service: nanokvm.set_mouse_jiggler
+        data:
+          mode: "relative"
+
+  - alias: "Disable Mouse Jiggler After Work"
+    trigger:
+      - platform: time
+        at: "17:00:00"
+    action:
+      - service: nanokvm.set_mouse_jiggler
+        data:
+          mode: "disable"
+```
+
+### Toggle HDMI Output Based on Presence
+
+```yaml
+automation:
+  - alias: "Turn on HDMI when someone is home"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.someone_home
+        to: "on"
+    action:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.nanokvm_hdmi
+
+  - alias: "Turn off HDMI when nobody is home"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.someone_home
+        to: "off"
+        for: "00:30:00"
+    action:
+      - service: switch.turn_off
+        target:
+          entity_id: switch.nanokvm_hdmi
+```
+
 ## Troubleshooting
 
 - If you can't connect to your NanoKVM device, make sure the IP address/hostname is correct and that the device is reachable from your Home Assistant instance.
 - If authentication fails, verify your username and password.
 - If entities are missing, try restarting Home Assistant.
+- HDMI control is only available on PCI-E versions of the NanoKVM and will automatically be hidden for other hardware versions.
+
+## Supported Languages
+
+This integration includes translations for:
+
+- English (en)
+- Portuguese (Brazil) (pt-BR)
 
 ## License
 

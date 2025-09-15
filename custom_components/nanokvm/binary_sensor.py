@@ -19,6 +19,7 @@ from .const import (
     DOMAIN,
     ICON_DISK,
     ICON_MDNS,
+    ICON_MOUSE_JIGGLER,
     ICON_NETWORK,
     ICON_OLED,
     ICON_POWER,
@@ -109,6 +110,14 @@ BINARY_SENSORS: tuple[NanoKVMBinarySensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda coordinator: coordinator.cdrom_status.cdrom == 1,
         available_fn=lambda coordinator: coordinator.mounted_image.file != "",
+    ),
+    NanoKVMBinarySensorEntityDescription(
+        key="mouse_jiggler",
+        name="Mouse Jiggler",
+        icon=ICON_MOUSE_JIGGLER,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda coordinator: coordinator.mouse_jiggler_state.enabled if coordinator.mouse_jiggler_state else False,
+        available_fn=lambda coordinator: coordinator.mouse_jiggler_state is not None,
     ),
 )
 

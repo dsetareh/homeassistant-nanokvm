@@ -58,6 +58,9 @@
       },
       "cdrom_mode": {
         "name": "Modo CD-ROM"
+      },
+      "mouse_jiggler": {
+        "name": "Mouse Jiggler"
       }
     },
     "sensor": {
@@ -89,6 +92,22 @@
       },
       "virtual_disk": {
         "name": "Disco Virtual"
+      },
+      "power": {
+        "name": "Alimentação"
+      },
+      "hdmi": {
+        "name": "Saída HDMI"
+      }
+    },
+    "select": {
+      "mouse_jiggler_mode": {
+        "name": "Modo Mouse Jiggler",
+        "state": {
+          "disable": "Desabilitar",
+          "relative": "Modo Relativo",
+          "absolute": "Modo Absoluto"
+        }
       }
     },
     "button": {
@@ -156,6 +175,16 @@
         "mac": {
           "name": "Endereço MAC",
           "description": "O endereço MAC para o qual enviar o pacote Wake-on-LAN."
+        }
+      }
+    },
+    "set_mouse_jiggler": {
+      "name": "Definir Mouse Jiggler",
+      "description": "Define o modo do mouse jiggler.",
+      "fields": {
+        "mode": {
+          "name": "Modo",
+          "description": "O modo do mouse jiggler (disable, relative, absolute)."
         }
       }
     }
